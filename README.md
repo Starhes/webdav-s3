@@ -50,13 +50,37 @@ S3_REGION=us-east-1
 npm run dev
 ```
 
-### 4. 部署到 Cloudflare
+### 4. 部署到 Cloudflare (CLI 方式)
 
 ```bash
 npm run deploy
 ```
 
 在 Cloudflare Dashboard 中设置环境变量 (Settings > Environment variables)。
+
+## ☁️ 完全在线部署 (无需本地操作)
+
+如果你不想使用命令行，可以直接在 Cloudflare Dashboard 上操作：
+
+1. **Fork 本仓库** 到你的 GitHub 账号。
+2. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com/)，进入 **Compute (Workers & Pages)** > **Pages**。
+3. 点击 **Connect to Git**，选择你 Fork 的 `webdav-s3` 仓库。
+4. **配置构建设置 (Build settings)**:
+   - **Framework preset**: `None`
+   - **Build command**: `npm run build` (可选，用于类型检查)
+   - **Build output directory**: `public`
+5. **设置环境变量 (Environment variables)**:
+   - 点击 "Environment variables (advanced)" 展开
+   - 添加以下变量：
+     - `WEBDAV_URL`: 你的 WebDAV 地址 (例如: `https://dav.jianguoyun.com/dav/`)
+     - `WEBDAV_USERNAME`: WebDAV 用户名
+     - `WEBDAV_PASSWORD`: WebDAV 密码
+     - `S3_ACCESS_KEY_ID`: 自行设置一个 Access Key ID (例如: `my-access-key`)
+     - `S3_SECRET_ACCESS_KEY`: 自行设置一个 Secret Key (例如: `my-secret-key`)
+     - `S3_REGION`: `us-east-1` (或你喜欢的区域代码)
+6. 点击 **Save and Deploy**。
+
+部署完成后，你会获得一个 `*.pages.dev` 的域名，这就是你的 S3 API Endpoint。
 
 ## 使用方法
 
