@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Error>
+  <Code>SignatureDoesNotMatch</Code>
+  <Message>The request signature we calculated does not match the signature you provided. Details: Server StringToSign: &quot;AWS4-HMAC-SHA256\n20251230T150816Z\n20251230/us-east-1/s3/aws4_request\n551eb02611e41215d3dd0b7b3460bbc813bd14d6d5c5e7c2c6ba07b3a469eb2e&quot;
+Server CanonicalRequest: &quot;PUT\n/mybucket/test%20space.txt\n\nhost:127.0.0.1:8790\nx-amz-content-sha256:UNSIGNED-PAYLOAD\nx-amz-date:20251230T150816Z\n\nhost;x-amz-content-sha256;x-amz-date\nUNSIGNED-PAYLOAD&quot;
+Server Calculated Signature: 5b8060179c17f486bfc62b96ef0d69c7abce71a3c616bea2032fe29a08fc3194
+Client Signature: 0000000000000000000000000000000000000000000000000000000000000000
+Raw Url: http://127.0.0.1:8790/mybucket/test%20space.txt
+Canonical URI: /mybucket/test%20space.txt</Message>
+  
+  <RequestId>4fcf3775-1319-4794-b405-079bb74da968</RequestId>
+</Error>

@@ -201,7 +201,10 @@ export async function verifySignature(
     const signedHeadersStr = components.signedHeaders.join(';');
 
     // Build canonical URI
-    const canonicalUri = uriEncode(url.pathname, false) || '/';
+    // url.pathname is already percent-encoded in some environments (e.g. Workers)
+    // We need to decode it first to avoid double encoding
+    const decodedPath = decodeURIComponent(url.pathname);
+    const canonicalUri = uriEncode(decodedPath, false) || '/';
 
     // Build canonical query string
     const queryParams = Array.from(url.searchParams.entries())
@@ -245,16 +248,7 @@ export async function verifySignature(
     const calculatedSignature = arrayBufferToHex(signatureBuffer);
 
     if (calculatedSignature !== components.signature) {
-        // Debug info for mismatch
-        const debugInfo = `
-Server StringToSign: ${JSON.stringify(stringToSign)}
-Server CanonicalRequest: ${JSON.stringify(canonicalRequest)}
-Server Calculated Signature: ${calculatedSignature}
-Client Signature: ${components.signature}
-Raw Url: ${request.url}
-Canonical URI: ${canonicalUri}
-`.trim();
-        return { valid: false, error: debugInfo };
+        return { valid: false, error: 'Signature mismatch' };
     }
 
     return { valid: true };
