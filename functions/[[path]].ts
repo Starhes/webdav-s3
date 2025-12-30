@@ -46,7 +46,7 @@ export async function onRequest(context: PagesContext): Promise<Response> {
         if (signatureResult.error?.includes('access key')) {
             return S3Errors.InvalidAccessKeyId();
         }
-        return S3Errors.SignatureDoesNotMatch();
+        return S3Errors.SignatureDoesNotMatch(signatureResult.error);
     }
 
     // Parse and handle S3 request

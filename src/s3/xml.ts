@@ -138,8 +138,8 @@ export const S3Errors = {
     InvalidAccessKeyId: () =>
         createErrorResponse(403, 'InvalidAccessKeyId', 'The AWS Access Key Id you provided does not exist in our records.'),
 
-    SignatureDoesNotMatch: () =>
-        createErrorResponse(403, 'SignatureDoesNotMatch', 'The request signature we calculated does not match the signature you provided.'),
+    SignatureDoesNotMatch: (detail?: string) =>
+        createErrorResponse(403, 'SignatureDoesNotMatch', detail ? `The request signature we calculated does not match the signature you provided. Details: ${detail}` : 'The request signature we calculated does not match the signature you provided.'),
 
     InternalError: (message?: string) =>
         createErrorResponse(500, 'InternalError', message || 'We encountered an internal error. Please try again.'),

@@ -245,7 +245,16 @@ export async function verifySignature(
     const calculatedSignature = arrayBufferToHex(signatureBuffer);
 
     if (calculatedSignature !== components.signature) {
-        return { valid: false, error: 'Signature mismatch' };
+        // Debug info for mismatch
+        const debugInfo = `
+Server StringToSign: ${JSON.stringify(stringToSign)}
+Server CanonicalRequest: ${JSON.stringify(canonicalRequest)}
+Server Calculated Signature: ${calculatedSignature}
+Client Signature: ${components.signature}
+Raw Url: ${request.url}
+Canonical URI: ${canonicalUri}
+`.trim();
+        return { valid: false, error: debugInfo };
     }
 
     return { valid: true };
