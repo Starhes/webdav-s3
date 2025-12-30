@@ -145,6 +145,18 @@ webdav-s3/
 - 单次请求最大 100MB (免费版) / 500MB (付费版)
 - 请求执行时间限制 30 秒
 
+## 常见问题 (Troubleshooting)
+
+### 404 Not Found / Method Not Allowed
+
+如果你在使用 Memos 或其他 S3 客户端时遇到 `404 Not Found` 错误，通常是因为客户端使用了 **Virtual-Hosted Style** (例如 `https://bucket-name.pages.dev/key`) 访问 API。
+
+Cloudflare Pages 默认不支持子域名通配符。你需要配置客户端使用 **Path-Style** (例如 `https://pages.dev/bucket-name/key`)。
+
+**解决方法**:
+- 在客户端设置中开启 `Force Path Style` (强制路径模式) 或类似选项。
+- 确保 Endpoint 填写的是 `https://your-project.pages.dev` 而不是包含 bucket 的域名。
+
 ## License
 
 MIT
