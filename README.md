@@ -112,7 +112,7 @@ aws s3 ls s3://bucket/ --endpoint-url $ENDPOINT
 aws s3 rm s3://bucket/test.txt --endpoint-url $ENDPOINT
 ```
 
-> **注意**: bucket 名称会被忽略，所有操作都映射到 WebDAV 根目录。
+> **目录映射**: Bucket 名称会自动映射为 WebDAV 目录。例如 `s3://photos/image.jpg` 会映射到 WebDAV 的 `/photos/image.jpg`。
 
 ## 项目结构
 

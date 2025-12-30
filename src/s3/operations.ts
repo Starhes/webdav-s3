@@ -38,13 +38,28 @@ export function parseS3Request(request: Request): S3RequestContext {
 }
 
 /**
+ * Build WebDAV path from bucket and key
+ * Maps S3 bucket to WebDAV directory
+ */
+function buildWebDAVPath(bucket: string, key: string): string {
+    if (!bucket) {
+        return key || '/';
+    }
+    if (!key) {
+        return `${bucket}/`;
+    }
+    return `${bucket}/${key}`;
+}
+
+/**
  * Handle GetObject operation
  */
 async function handleGetObject(
     ctx: S3RequestContext,
     client: WebDAVClient
 ): Promise<Response> {
-    const response = await client.get(ctx.key);
+    const webdavPath = buildWebDAVPath(ctx.bucket, ctx.key);
+    const response = await client.get(webdavPath);
 
     if (!response.ok) {
         if (response.status === 404) {
@@ -86,11 +101,13 @@ async function handlePutObject(
         return S3Errors.InternalError('Missing request body');
     }
 
-    // Ensure parent directories exist
-    await client.ensureParentDirs(ctx.key);
+    const webdavPath = buildWebDAVPath(ctx.bucket, ctx.key);
+
+    // Ensure parent directories exist (including bucket directory)
+    await client.ensureParentDirs(webdavPath);
 
     const contentType = ctx.headers.get('Content-Type') || 'application/octet-stream';
-    const response = await client.put(ctx.key, ctx.body, contentType);
+    const response = await client.put(webdavPath, ctx.body, contentType);
 
     if (!response.ok && response.status !== 201 && response.status !== 204) {
         return S3Errors.InternalError(`WebDAV PUT failed: ${response.status}`);
@@ -115,7 +132,8 @@ async function handleDeleteObject(
     ctx: S3RequestContext,
     client: WebDAVClient
 ): Promise<Response> {
-    const response = await client.delete(ctx.key);
+    const webdavPath = buildWebDAVPath(ctx.bucket, ctx.key);
+    const response = await client.delete(webdavPath);
 
     // 204 No Content or 404 Not Found are both acceptable for delete
     if (!response.ok && response.status !== 204 && response.status !== 404) {
@@ -137,7 +155,8 @@ async function handleHeadObject(
     ctx: S3RequestContext,
     client: WebDAVClient
 ): Promise<Response> {
-    const response = await client.head(ctx.key);
+    const webdavPath = buildWebDAVPath(ctx.bucket, ctx.key);
+    const response = await client.head(webdavPath);
 
     if (!response.ok) {
         if (response.status === 404) {
@@ -179,8 +198,9 @@ async function handleListBucket(
     const maxKeysStr = ctx.url.searchParams.get('max-keys');
     const maxKeys = maxKeysStr ? parseInt(maxKeysStr, 10) : 1000;
 
-    // PROPFIND on the prefix path
-    const searchPath = prefix || '/';
+    // PROPFIND on the bucket/prefix path
+    const bucketPath = ctx.bucket ? `${ctx.bucket}/` : '/';
+    const searchPath = prefix ? `${ctx.bucket}/${prefix}` : bucketPath;
     let resources;
 
     try {
@@ -269,8 +289,9 @@ async function handleHeadBucket(
     ctx: S3RequestContext,
     client: WebDAVClient
 ): Promise<Response> {
+    const bucketPath = ctx.bucket ? `${ctx.bucket}/` : '/';
     try {
-        const resources = await client.propfind('/', '0');
+        const resources = await client.propfind(bucketPath, '0');
 
         if (resources.length > 0) {
             return new Response(null, {
