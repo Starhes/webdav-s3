@@ -8,6 +8,7 @@ export interface Env {
     S3_ACCESS_KEY_ID: string;
     S3_SECRET_ACCESS_KEY: string;
     S3_REGION: string;
+    CACHE_MAX_AGE?: string; // Optional: Cache-Control max-age in seconds, default 15552000 (half year)
 }
 
 /**

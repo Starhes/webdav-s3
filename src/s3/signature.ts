@@ -112,12 +112,23 @@ async function createCanonicalRequest(
     signedHeaders: string,
     payloadHash: string
 ): Promise<string> {
-    // canonicalHeaders already ends with \n, so we don't need empty string
+    // AWS Sig V4 canonical request format:
+    // HTTPMethod\n
+    // CanonicalURI\n
+    // CanonicalQueryString\n
+    // CanonicalHeaders (each line ends with \n, entire block ends with \n)
+    // \n (empty line - produced by join since canonicalHeaders ends with \n)
+    // SignedHeaders\n
+    // HashedPayload
+    //
+    // canonicalHeaders ends with \n, and when we join with \n,
+    // we get: ...lastHeader\n\n<signedHeaders> (the empty line is required)
     return [
         method,
         canonicalUri,
         canonicalQueryString,
-        canonicalHeaders + signedHeaders,
+        canonicalHeaders,  // Keep trailing \n, join adds another \n creating the empty line
+        signedHeaders,
         payloadHash,
     ].join('\n');
 }
@@ -215,9 +226,9 @@ export async function verifySignature(
     // Date header is in RFC 7231 format: "Wed, 01 Jan 2020 00:00:00 GMT"
     const amzDate = request.headers.get('x-amz-date');
     const dateHeader = request.headers.get('date');
-    
+
     let requestDateTime: string | null = null;
-    
+
     if (amzDate) {
         // x-amz-date is already in the correct format
         requestDateTime = amzDate;

@@ -3,6 +3,22 @@ import { WebDAVClient } from '../webdav/client';
 import { generateListBucketResultXml, S3Errors } from './xml';
 import { createPresignedUrl } from './presign';
 
+// Default cache max-age: half year in seconds (15552000 = 180 days)
+const DEFAULT_CACHE_MAX_AGE = 15552000;
+
+/**
+ * Get cache max-age from environment or use default
+ */
+function getCacheMaxAge(env: Env): number {
+    if (env.CACHE_MAX_AGE) {
+        const parsed = parseInt(env.CACHE_MAX_AGE, 10);
+        if (!isNaN(parsed) && parsed >= 0) {
+            return parsed;
+        }
+    }
+    return DEFAULT_CACHE_MAX_AGE;
+}
+
 /**
  * Parse S3 request to extract bucket, key, and operation
  */
@@ -57,7 +73,8 @@ function buildWebDAVPath(bucket: string, key: string): string {
  */
 async function handleGetObject(
     ctx: S3RequestContext,
-    client: WebDAVClient
+    client: WebDAVClient,
+    env: Env
 ): Promise<Response> {
     const webdavPath = buildWebDAVPath(ctx.bucket, ctx.key);
     const response = await client.get(webdavPath);
@@ -74,6 +91,10 @@ async function handleGetObject(
     headers.set('Content-Type', response.headers.get('Content-Type') || 'application/octet-stream');
     headers.set('Content-Length', response.headers.get('Content-Length') || '0');
     headers.set('x-amz-request-id', crypto.randomUUID());
+
+    // Add Cache-Control header with configurable max-age
+    const maxAge = getCacheMaxAge(env);
+    headers.set('Cache-Control', `public, max-age=${maxAge}`);
 
     const lastModified = response.headers.get('Last-Modified');
     if (lastModified) {
@@ -236,7 +257,7 @@ async function handleListBucket(
             // Relative path - prepend base URL origin
             urlPath = new URL(ctx.url.origin + '/' + resource.href).pathname;
         }
-        
+
         key = urlPath.startsWith('/') ? urlPath.slice(1) : urlPath;
 
         // Remove bucket name from path if present
@@ -327,7 +348,8 @@ async function handleHeadBucket(
  */
 async function handleGetObjectStream(
     ctx: S3RequestContext,
-    client: WebDAVClient
+    client: WebDAVClient,
+    env: Env
 ): Promise<Response> {
     const webdavPath = buildWebDAVPath(ctx.bucket, ctx.key);
     const response = await client.get(webdavPath);
@@ -344,6 +366,10 @@ async function handleGetObjectStream(
     headers.set('Content-Type', response.headers.get('Content-Type') || 'application/octet-stream');
     headers.set('Content-Length', response.headers.get('Content-Length') || '0');
     headers.set('x-amz-request-id', crypto.randomUUID());
+
+    // Add Cache-Control header with configurable max-age
+    const maxAge = getCacheMaxAge(env);
+    headers.set('Cache-Control', `public, max-age=${maxAge}`);
 
     const lastModified = response.headers.get('Last-Modified');
     if (lastModified) {
@@ -369,7 +395,7 @@ async function handleCreatePresignedGetUrl(
     env: Env
 ): Promise<Response> {
     const expiresIn = parseInt(ctx.url.searchParams.get('Expires') || '86400', 10); // Default 24 hours
-    
+
     try {
         const presignedUrl = await createPresignedUrl(
             env.S3_ACCESS_KEY_ID,
@@ -403,7 +429,7 @@ export async function handleS3Operation(
 
     switch (ctx.operation) {
         case 'GetObject':
-            return handleGetObject(ctx, client);
+            return handleGetObject(ctx, client, env);
         case 'PutObject':
             return handlePutObject(ctx, client);
         case 'DeleteObject':
@@ -415,7 +441,7 @@ export async function handleS3Operation(
         case 'HeadBucket':
             return handleHeadBucket(ctx, client);
         case 'GetObjectStream':
-            return handleGetObjectStream(ctx, client);
+            return handleGetObjectStream(ctx, client, env);
         case 'CreatePresignedGetUrl':
             return handleCreatePresignedGetUrl(ctx, env);
         default:
